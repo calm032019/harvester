@@ -1,6 +1,7 @@
 import { spawn } from "child_process";
 import { promises as fs, existsSync } from "fs";
 import path from "path";
+import YTDlpWrap from "yt-dlp-wrap";
 import { storage } from "../storage";
 import { Download } from "../../shared/schema";
 
@@ -33,8 +34,7 @@ export class VideoDownloader {
   constructor() {
     this.downloadsDir = path.join(process.cwd(), "downloads");
     
-    // Import yt-dlp-wrap and initialize
-    const YTDlpWrap = require("yt-dlp-wrap").default;
+    // Initialize yt-dlp-wrap
     this.ytDlpWrap = new YTDlpWrap();
     
     // Kick off binary download (async). Errors are logged but will not block construction.
