@@ -1,7 +1,9 @@
 import { spawn } from "child_process";
+import { createRequire } from "module";
 import { promises as fs, existsSync } from "fs";
 import path from "path";
-import YTDlpWrap from "yt-dlp-wrap";
+const require = createRequire(import.meta.url);
+const YTDlpWrap = require('yt-dlp-wrap');
 import { storage } from "../storage";
 import { Download } from "../../shared/schema";
 
