@@ -27,18 +27,40 @@ export class VideoDownloader {
   // safe fallback that returns at least a 360p pre-merged stream.
   private extractorClients = ['default', 'ios'];
 
+  private ytDlpWrap: any;
+  private ytDlpReady: Promise<void>;
+
   constructor() {
     this.downloadsDir = path.join(process.cwd(), "downloads");
-    // Prefer the locally-installed up-to-date yt-dlp binary if present,
-    // otherwise fall back to the system one (which may be outdated).
-    const isWindows = process.platform === "win32";
-    const binName = isWindows ? "yt-dlp.exe" : "yt-dlp";
-    const localYtDlp = path.join(process.cwd(), ".bin", binName);
-    this.ytDlpPath = existsSync(localYtDlp) ? localYtDlp : binName;
+    
+    // Import yt-dlp-wrap and initialize
+    const YTDlpWrap = require("yt-dlp-wrap").default;
+    this.ytDlpWrap = new YTDlpWrap();
+    
+    // Kick off binary download (async). Errors are logged but will not block construction.
+    this.ytDlpReady = this.ytDlpWrap.downloadYtDlp()
+      .then(() => {
+        console.log("✅ yt-dlp binary ready via yt-dlp-wrap");
+        this.ytDlpPath = this.ytDlpWrap.getBinaryPath();
+      })
+      .catch((err: any) => {
+        console.error("⚠ Failed to download yt-dlp binary via yt-dlp-wrap:", err);
+        // Fallback: keep path empty – subsequent spawn will fail and be handled.
+        this.ytDlpPath = "";
+      });
+      
     this.ensureDownloadsDir();
     this.setupCookies();
     this.checkApiKeyStatus();
     this.logYtDlpVersion();
+  }
+
+  // Ensure yt-dlp binary is downloaded and path set before any operation
+  private async ensureBinaryReady(): Promise<void> {
+    if (this.ytDlpPath && this.ytDlpPath.length > 0) {
+      return;
+    }
+    await this.ytDlpReady;
   }
 
   private async ensureDownloadsDir() {
@@ -88,6 +110,12 @@ export class VideoDownloader {
   }
 
   private async logYtDlpVersion() {
+    // Ensure binary is ready before checking version
+    await this.ensureBinaryReady();
+    if (!this.ytDlpPath) {
+      console.log("⚠ yt-dlp binary not ready yet – version check postponed");
+      return;
+    }
     try {
       const { spawn } = await import("child_process");
       const process = spawn(this.ytDlpPath, ["--version"]);
@@ -426,6 +454,8 @@ export class VideoDownloader {
     duration: string;
     fileSize?: string;
   } | null> {
+    // Ensure binary is ready before spawning yt-dlp
+    await this.ensureBinaryReady();
     return new Promise((resolve, reject) => {
       const args = [
         "--print-json",
@@ -795,6 +825,8 @@ export class VideoDownloader {
   }
 
   private async executeDownloadWithAuth(downloadId: number, url: string, args: string[]): Promise<void> {
+    // Ensure binary is ready before spawning yt-dlp for download
+    await this.ensureBinaryReady();
     return new Promise((resolve, reject) => {
       console.log("Starting download with args:", args.join(" "));
       const process = spawn(this.ytDlpPath, args);
