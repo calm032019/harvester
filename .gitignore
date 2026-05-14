@@ -1,0 +1,14 @@
+node_modules
+dist
+.DS_Store
+server/public
+vite.config.ts.*
+*.tar.gz
+.local
+sqlite.db
+.env
+.bin
+cookies.txt
+test.json
+.vscode
+downloads/
