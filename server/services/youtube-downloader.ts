@@ -1,9 +1,6 @@
 import { spawn } from "child_process";
-import { createRequire } from "module";
 import { promises as fs, existsSync } from "fs";
 import path from "path";
-const require = createRequire(import.meta.url);
-const YTDlpWrap = require('yt-dlp-wrap');
 import { storage } from "../storage";
 import { Download } from "../../shared/schema";
 
@@ -22,7 +19,7 @@ interface YouTubeVideoInfo {
 
 export class VideoDownloader {
   private downloadsDir: string;
-  private ytDlpPath: string;
+  private ytDlpPath: string = "";
   private cookiesPath: string | null = null;
   private maxRetries: number = 3;
   // 'default' = let yt-dlp pick its built-in defaults (currently the most
@@ -36,11 +33,13 @@ export class VideoDownloader {
   constructor() {
     this.downloadsDir = path.join(process.cwd(), "downloads");
     
-    // Initialize yt-dlp-wrap
-    this.ytDlpWrap = new YTDlpWrap();
-    
-    // Kick off binary download (async). Errors are logged but will not block construction.
-    this.ytDlpReady = this.ytDlpWrap.downloadYtDlp()
+    // Dynamically import yt-dlp-wrap and initialize
+    this.ytDlpReady = import('yt-dlp-wrap')
+      .then((mod) => {
+        const YTDlpWrap = mod.default;
+        this.ytDlpWrap = new YTDlpWrap();
+        return this.ytDlpWrap.downloadYtDlp();
+      })
       .then(() => {
         console.log("✅ yt-dlp binary ready via yt-dlp-wrap");
         this.ytDlpPath = this.ytDlpWrap.getBinaryPath();
