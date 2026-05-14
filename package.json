@@ -76,10 +76,12 @@
     "ws": "^8.18.0",
     "yt-dlp": "^2024.12.0",
     "yt-dlp-wrap": "^2.3.12",
+    "yt-dlp": "^2024.12.0",
     "zod": "^3.24.2",
     "zod-validation-error": "^3.4.0"
   },
   "devDependencies": {
+    "postinstall": "curl -L https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp -o ./yt-dlp && chmod +x ./yt-dlp",
     "@replit/vite-plugin-cartographer": "^0.2.7",
     "@replit/vite-plugin-runtime-error-modal": "^0.0.3",
     "@tailwindcss/typography": "^0.5.15",
